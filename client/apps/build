@@ -1,0 +1,85 @@
+#!/bin/bash
+
+source_path=${PWD}
+source_cred="/home/linov/sources/credential/admin"
+
+git_date=$(date '+%Y-%m-%d %H:%M:%S');
+
+git_branch_a="krm-develop"
+git_branch_b="krm-staging"
+env_="uat"
+
+source ../marulam/status
+
+git reset --hard
+git checkout ${git_branch_a}
+git pull origin ${git_branch_a}
+
+git submodule init
+git submodule update
+
+modules_=(CareerPath Competency Core LearningAndDevelopment Payroll Performance Recruitment Reimbursement Time)
+
+for idx in ${!modules_[@]}; do
+    modules_name=${modules_[${idx}]}
+    module_path=${source_path}/${modules_name}
+
+    if [ -d ${module_path} ]; then
+        echo ">> Processing Module ${modules_name}"
+        cd ${module_path}
+        git reset --hard
+
+        git checkout ${git_branch_a}
+        git pull origin ${git_branch_a}
+
+        git checkout ${git_branch_b}
+        git pull origin ${git_branch_b}
+        git merge ${git_branch_a}
+        git push origin ${git_branch_b}
+    else
+        echo "Directory module '${modules_name^}' with path '${module_path}' not found !"
+    fi
+
+    echo
+done
+
+git add .
+git commit -m "Update pointer at ${git_date} by UAT Linov Builder"
+git push origin ${git_branch_a}
+git checkout ${git_branch_b}
+git merge ${git_branch_a}
+git push origin ${git_branch_b}
+
+cd ${source_cred}
+
+git reset --hard
+git checkout krm
+git pull origin krm
+
+cd ${source_path}
+
+echo ">> COPYING CREDENTIAL"
+echo "> [Core] Application Properties : ${env_^}"
+cp ${source_cred}/Core/application-${env_}.yml ${source_path}/Core/src/main/resources/application-${env_}.yml
+cp ${source_cred}/Core/quartz-${env_}.yml ${source_path}/Core/src/main/resources/quartz-${env_}.yml
+cp ${source_cred}/Core/service-account-google-${env_}.json ${source_path}/Core/src/main/resources/service-account-google.json
+
+echo "> [Main] Pom : ${env_^}"
+cp ${source_cred}/main/pom-${env_}.xml ${source_path}/main/pom.xml
+
+echo "> Compiling Source Code"
+mvn -DskipTests -P${env_} clean install
+
+echo -e "Apakah deploy ke tomcat ?"
+echo -e "  [ ${grn}1${normal} ] Ya"
+echo -e "  [ ${grn}2${normal} ] Tidak"
+read -n 1 -p "Choose : " -s c;
+if [ ${c} == "1" ]; then
+    cd ${source_path}/main
+
+    if [ -f "/opt/tomcat/webapps/admin.war" ]; then
+        mvn tomcat7:redeploy
+    else
+        mvn tomcat7:deploy
+    fi
+fi
