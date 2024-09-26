@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: "postgres14"
+    restart: no
+    ports:
+      - 9721:5432
+    environment:
+      POSTGRES_USER: linovdb
+      POSTGRES_PASSWORD: linov
+      POSTGRES_DB: linovdb   # Add a database name if needed
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linovdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - linov
+
+volumes:
+  pgdata:
+
+networks:
+  linov:
+    driver: bridge

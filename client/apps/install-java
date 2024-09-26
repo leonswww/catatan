@@ -1,0 +1,46 @@
+
+#!/bin/bash
+
+# Function to display message
+function print_message() {
+  echo -e "\n============================="
+  echo -e "$1"
+  echo -e "=============================\n"
+}
+
+# 1. Install OpenJDK 17
+print_message "Installing OpenJDK 17"
+sudo apt-get update
+sudo apt-get install -y openjdk-17-jdk
+
+# Check if installation was successful
+if java -version &> /dev/null; then
+    print_message "Java installed successfully!"
+else
+    print_message "Java installation failed. Trying to add PPA..."
+    sudo add-apt-repository -y ppa:openjdk-r/ppa
+    sudo apt-get update
+    sudo apt-get install -y openjdk-17-jdk
+fi
+
+# Verify Java installation
+print_message "Verifying Java Installation"
+java -version
+
+# 2. Setting JAVA_HOME and JRE_HOME
+print_message "Configuring Environment Variables"
+
+# Option 1: Set system-wide environment variables
+echo 'JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"' | sudo tee -a /etc/environment
+echo 'JRE_HOME="/usr/lib/jvm/java-17-openjdk-amd64/jre"' | sudo tee -a /etc/environment
+
+# Option 2: Set environment variables for the current user
+echo 'export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"' >> ~/.bashrc
+echo 'export JRE_HOME="/usr/lib/jvm/java-17-openjdk-amd64/jre"' >> ~/.bashrc
+source ~/.bashrc
+
+print_message "JAVA_HOME and JRE_HOME have been set"
+
+# Final message
+print_message "Java installation and configuration complete!"
+

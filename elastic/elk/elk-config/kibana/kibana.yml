@@ -1,0 +1,5 @@
+# Default Kibana configuration for docker target
+server.name: kibana
+server.host: "0"
+elasticsearch.hosts: [ "http://146.190.89.89:9200" ]
+monitoring.ui.container.elasticsearch.enabled: true

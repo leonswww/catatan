@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+# Update package list and install required packages
+echo "Updating package list..."
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+
+# Add Docker's official GPG key
+echo "Adding Docker's GPG key..."
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the Docker repository
+echo "Adding Docker repository..."
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Update package list again
+echo "Updating package list again..."
+sudo apt-get update
+
+# Install Docker and related packages
+echo "Installing Docker..."
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Create docker group if it doesn't exist
+echo "Creating docker group if it doesn't exist..."
+sudo groupadd -f docker
+
+# Add user to Docker group
+echo "Adding $(whoami) to the Docker group..."
+sudo usermod -aG docker $(whoami)
+
+# Enable and start the Docker service
+echo "Enabling and starting Docker service..."
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Inform user to activate the new group without logging out
+echo "Run the following command to activate the docker group without logging out:"
+echo "newgrp docker"

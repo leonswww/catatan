@@ -1,0 +1,142 @@
+#!/bin/bash
+
+# Function to print messages
+function print_message() {
+  echo -e "\n============================="
+  echo -e "$1"
+  echo -e "=============================\n"
+}
+
+# Function to check the result of the last executed command
+function check_success() {
+  if [ $? -eq 0 ]; then
+    echo -e "$1 succeeded."
+  else
+    echo -e "$1 failed. Exiting script."
+    exit 1
+  fi
+}
+
+# 1. Create Tomcat user and group
+print_message "Creating Tomcat user and group"
+sudo groupadd tomcat
+check_success "Group creation"
+
+sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
+check_success "User creation"
+
+# 2. Install Tomcat 10.1.30
+print_message "Installing Tomcat 10.1.30"
+cd /tmp
+curl -O https://downloads.apache.org/tomcat/tomcat-10/v10.1.30/bin/apache-tomcat-10.1.30.tar.gz
+check_success "Download of Tomcat 10.1.30"
+
+sudo mkdir /opt/tomcat
+check_success "Directory creation for Tomcat"
+
+sudo tar xzvf apache-tomcat-10.1.30.tar.gz -C /opt/tomcat --strip-components=1
+check_success "Extracting Tomcat files"
+
+# 3. Update permissions
+print_message "Updating Tomcat permissions"
+sudo chgrp -R tomcat /opt/tomcat
+check_success "Changing group permissions"
+
+sudo chmod -R g+r /opt/tomcat/conf
+check_success "Setting group read permissions for conf directory"
+
+sudo chmod g+x /opt/tomcat/conf
+check_success "Setting execute permissions for conf directory"
+
+sudo chown -R tomcat /opt/tomcat/webapps/ /opt/tomcat/work/ /opt/tomcat/temp/ /opt/tomcat/logs/
+check_success "Changing ownership of webapps, work, temp, and logs directories"
+
+# 4. Create a systemd service file for Tomcat
+print_message "Creating Tomcat systemd service file"
+sudo bash -c 'cat <<EOL > /etc/systemd/system/tomcat.service
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+Environment=JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment="CATALINA_OPTS=-Xms512M -Xmx4096M -server -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:ParallelGCThreads=4 -XX:MaxMetaspaceSize=8192M"
+Environment="JAVA_OPTIONS=-Xms512M -Xmx4096M -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:ParallelGCThreads=4 -XX:MaxMetaspaceSize=8192M"
+Environment="JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom -Duser.timezone=Asia/Jakarta"
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+User=tomcat
+Group=tomcat
+UMask=0007
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOL'
+check_success "Creation of systemd service file"
+
+# 5. Reload systemd daemon and enable Tomcat service
+print_message "Enabling and starting Tomcat service"
+sudo systemctl daemon-reload
+check_success "Reloading systemd daemon"
+
+sudo systemctl enable tomcat
+check_success "Enabling Tomcat service"
+
+sudo systemctl start tomcat
+check_success "Starting Tomcat service"
+
+sudo systemctl status tomcat
+check_success "Checking Tomcat service status"
+
+# 6. Configure firewall to allow Tomcat access
+print_message "Configuring firewall for Tomcat"
+sudo ufw allow 8080
+check_success "Allowing port 8080 through firewall"
+
+# 7. Configure Tomcat users for admin and manager access
+print_message "Configuring Tomcat admin and manager users"
+sudo bash -c 'cat <<EOL > /opt/tomcat/conf/tomcat-users.xml
+<tomcat-users>
+  <role rolename="admin-gui"/>
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <user username="linovbss" password="4c4ac54606b4089f53ae5461588f5c5eba34050677b20da43380a1011eeeffd46f9e7e639ff0385f5a30468bab02a8c3b4de0ae085ebb372b7160c5d63b9e88b" roles="admin-gui,manager-gui,manager-script"/>
+</tomcat-users>
+EOL'
+check_success "Updating tomcat-users.xml"
+
+# 8. Update server.xml and context.xml files for manager and host-manager access
+print_message "Updating Tomcat server.xml and context.xml"
+sudo sed -i 's/<Connector port="8080"/<Connector address="127.0.0.1" port="8080"/' /opt/tomcat/conf/server.xml
+check_success "Updating server.xml to bind to 127.0.0.1"
+
+# Disable RemoteAddrValve restrictions for manager and host-manager
+sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve"/<!-- <Valve className="org.apache.catalina.valves.RemoteAddrValve"/' /opt/tomcat/webapps/manager/META-INF/context.xml
+check_success "Updating manager context.xml"
+
+sudo sed -i 's/"\/>/\/> -->/' /opt/tomcat/webapps/manager/META-INF/context.xml
+check_success "Disabling RemoteAddrValve in manager context.xml"
+
+sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve"/<!-- <Valve className="org.apache.catalina.valves.RemoteAddrValve"/' /opt/tomcat/webapps/host-manager/META-INF/context.xml
+check_success "Updating host-manager context.xml"
+
+sudo sed -i 's/"\/>/\/> -->/' /opt/tomcat/webapps/host-manager/META-INF/context.xml
+check_success "Disabling RemoteAddrValve in host-manager context.xml"
+
+# 9. Set CATALINA_BASE environment variable
+print_message "Setting CATALINA_BASE environment variable"
+echo 'export CATALINA_BASE="/opt/tomcat"' >> ~/.bashrc
+check_success "Appending CATALINA_BASE to .bashrc"
+
+source ~/.bashrc
+check_success "Sourcing .bashrc"
+
+# Final message
+print_message "Tomcat installation and configuration complete!"
+
