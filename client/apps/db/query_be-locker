@@ -1,0 +1,58 @@
+CREATE TABLE IF NOT EXISTS public.tb_users
+(
+    id_user serial PRIMARY KEY,
+    nama character varying(255),
+    no_ktp character varying(255),
+    email character varying(255),
+    password character varying(255), -- hashed password
+    phone_number character varying(255)
+);
+
+CREATE TABLE IF NOT EXISTS public.tb_locker
+(
+    id_locker serial PRIMARY KEY, -- sudah menjadi primary key
+    id_user integer REFERENCES tb_users(id_user) ON DELETE CASCADE, -- foreign key with cascade delete
+    nomor_locker character varying(255),
+    tanggal_peminjaman timestamp without time zone,
+    tanggal_pengembalian timestamp without time zone,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    deposit integer,
+    denda integer,
+    password_locker character varying(255), -- hashed password locker
+    attemp_password integer,
+    isopen boolean DEFAULT false,
+    isclosed boolean DEFAULT false
+);
+
+CREATE TABLE IF NOT EXISTS public.tb_locker
+(
+    id_locker serial,
+    id_user integer REFERENCES tb_users(id_user) ON DELETE CASCADE, -- foreign key with cascade delete
+    nomor_locker character varying(255),
+    tanggal_peminjaman timestamp without time zone,
+    tanggal_pengembalian timestamp without time zone,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    deposit integer,
+    denda integer,
+    password_locker character varying(255), -- hashed password locker
+    attemp_password integer,
+    isopen boolean DEFAULT false,
+    isclosed boolean DEFAULT false,
+    CONSTRAINT tb_locker_pkey PRIMARY KEY (id_locker) -- primary key hanya didefinisikan di sini
+);
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_tb_locker_updated_at
+BEFORE UPDATE ON tb_locker
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
