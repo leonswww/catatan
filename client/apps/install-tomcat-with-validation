@@ -106,7 +106,7 @@ sudo bash -c 'cat <<EOL > /opt/tomcat/conf/tomcat-users.xml
   <role rolename="admin-gui"/>
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
-  <user username="linovbss" password="4c4ac54606b4089f53ae5461588f5c5eba34050677b20da43380a1011eeeffd46f9e7e639ff0385f5a30468bab02a8c3b4de0ae085ebb372b7160c5d63b9e88b" roles="admin-gui,manager-gui,manager-script"/>
+  <user username="madara" password="madara" roles="admin-gui,manager-gui,manager-script"/>
 </tomcat-users>
 EOL'
 check_success "Updating tomcat-users.xml"
