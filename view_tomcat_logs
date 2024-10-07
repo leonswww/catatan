@@ -1,0 +1,4 @@
+#!/bin/bash
+
+tail -f -n2000 /opt/tomcat/logs/catalina.out
+

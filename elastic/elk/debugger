@@ -1,0 +1,10 @@
+Log seerti ini, menggunakan grok debugger seperti ini 
+'''
+Logs
+
+2024-10-01T13:38:51.045+07:00  INFO [LinovHR - JobPortal]  1191 --- [o-8080-exec-227] c.l.j.l.listener.LoggingEventListener    : [8865] HTTP/1.0 GET http://api-dev5-jobportal.linovhr.com/jobportal/api/v1/recruitment/selection-process-candidates/lawencon?jobVacancyId=b0d54908-a0d6-42a4-8146-a3103224ded3
+
+grok debugger
+
+%{TIMESTAMP_ISO8601:timestamp} +%{LOGLEVEL:log_level} \[%{DATA:app_name}\] +%{NUMBER:pid} --- \[%{DATA:thread_name}\] +%{DATA:class_name} +:?\[%{NUMBER:identifier}\] %{WORD:protocol}/%{NUMBER:http_version} %{WORD:http_method} %{URI:url}(\?%{DATA:query_string})?
+'''
