@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Define variables
+MAVEN_PROJECT_DIR="/root/be-locker"  # Change this to the path of your Maven project
+TOMCAT_WEBAPP_DIR="/opt/tomcat/webapps"
+WAR_FILE="be-locker.war"  # Update this with the actual name of the generated WAR file
+
+# Step 1: Navigate to the Maven project directory
+cd "$MAVEN_PROJECT_DIR" || { echo "Maven project directory not found"; exit 1; }
+
+# Step 2: Compile the Maven project, skipping tests
+echo "Compiling the Maven project and skipping tests..."
+mvn -DskipTests clean install
+
+# Step 3: Check if the build was successful
+if [ $? -eq 0 ]; then
+    echo "Build successful!"
+else
+    echo "Build failed. Exiting..."
+    exit 1
+fi
+
+# Step 4: Deploy the WAR file to Tomcat's webapps directory
+echo "Deploying the WAR file to Tomcat..."
+cp target/"$WAR_FILE" "$TOMCAT_WEBAPP_DIR"
+
+# Step 5: Check if the WAR file was successfully copied
+if [ $? -eq 0 ]; then
+    echo "Deployment successful!"
+else
+    echo "Deployment failed!"
+    exit 1
+fi
+
+# Step 6: Restart Tomcat to apply the changes
+echo "Restarting Tomcat..."
+sudo systemctl restart tomcat
+
+# Step 7: Confirm that Tomcat restarted successfully
+if [ $? -eq 0 ]; then
+    echo "Tomcat restarted successfully!"
+else
+    echo "Failed to restart Tomcat."
+    exit 1
+fi
+
+echo "Auto-deploy process completed successfully!"
