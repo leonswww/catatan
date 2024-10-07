@@ -3,7 +3,7 @@
 # Define variables
 MAVEN_PROJECT_DIR="/root/be-locker"  # Change this to the path of your Maven project
 TOMCAT_WEBAPP_DIR="/opt/tomcat/webapps"
-WAR_FILE="be-locker.war"  # Update this with the actual name of the generated WAR file
+WAR_FILE="locker-be-0.1.war"  # Update this with the actual name of the generated WAR file
 
 # Step 1: Navigate to the Maven project directory
 cd "$MAVEN_PROJECT_DIR" || { echo "Maven project directory not found"; exit 1; }
