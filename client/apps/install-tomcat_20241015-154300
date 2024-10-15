@@ -19,22 +19,38 @@ function check_success() {
 
 # 1. Create Tomcat user and group
 print_message "Creating Tomcat user and group"
-sudo groupadd tomcat
-check_success "Group creation"
 
-sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
-check_success "User creation"
+# Check if the group 'tomcat' already exists
+if getent group tomcat > /dev/null 2>&1; then
+  echo "Group 'tomcat' already exists. Skipping group creation."
+else
+  sudo groupadd tomcat
+  check_success "Group creation"
+fi
 
-# 2. Install Tomcat 10.1.30
-print_message "Installing Tomcat 10.1.30"
+# Check if the user 'tomcat' already exists
+if id -u tomcat > /dev/null 2>&1; then
+  echo "User 'tomcat' already exists. Skipping user creation."
+else
+  sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
+  check_success "User creation"
+fi
+
+# 2. Install Tomcat 10.1.31
+print_message "Installing Tomcat 10.1.31"
 cd /tmp
 curl -O https://downloads.apache.org/tomcat/tomcat-10/v10.1.31/bin/apache-tomcat-10.1.31.tar.gz
-check_success "Download of Tomcat 10.1.30"
+check_success "Download of Tomcat 10.1.31"
 
-sudo mkdir /opt/tomcat
-check_success "Directory creation for Tomcat"
+# Check if the /opt/tomcat directory exists
+if [ -d "/opt/tomcat" ]; then
+  echo "/opt/tomcat directory already exists. Skipping directory creation."
+else
+  sudo mkdir /opt/tomcat
+  check_success "Directory creation for Tomcat"
+fi
 
-sudo tar xzvf apache-tomcat-10.1.30.tar.gz -C /opt/tomcat --strip-components=1
+sudo tar xzvf apache-tomcat-10.1.31.tar.gz -C /opt/tomcat --strip-components=1
 check_success "Extracting Tomcat files"
 
 # 3. Update permissions

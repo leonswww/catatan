@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  build:
+    image: maven:3.8.4-openjdk-17
+    volumes:
+      - .:/app
+      - ~/.m2:/root/.m2
+    working_dir: /app
+    command: mvn clean package -DskipTests
+    
+  tomcat:
+    image: tomcat:10.1-jdk17-openjdk-slim
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./target/*.war:/usr/local/tomcat/webapps/ROOT.war
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+    depends_on:
+      - build
+
